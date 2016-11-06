@@ -1,45 +1,47 @@
 package robDex;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import robDex.Exceptions.BadRequestException;
 import robDex.Exceptions.FailedCompilationException;
-import robDex.Exceptions.IllegalFileException;
 
 /**
  * <p>
  * This class is used to receive the client's java sources, compile them into a .dx file, then send it back to them.
  * </p>
  * <p>
- * During the transfer, the server will check if the files are appropriate (name and size).<br />
+ * During the transfer, the server will check at mutiple times if the request is appropriate.<br />
  * The server will send to the client:<br />
- * 	{@code 0} if the file is valid,<br />
+ * 	{@code 0} if the request is valid,<br />
  * 	{@code -1} otherwise. In this case, the server will immediately close the connection.
  * </p>
  * <p>
  * When compiling is done, the server will send an answer to the client specifying if the compilation was successful:<br />
  * 	{@code 0} if the compilation is successful,<br />
  * 	{@code -1} otherwise.
+ *
+ * </p>
  * 
+ * <p>
+ * Except for the files content, all requests must end with a line feed ('\n') or a carriage return ('\r') to be read.<br/>
+ * All answers given by the server end with a line feed.
  * </p>
  * <p>
  * The operations are as follows :<br />
  * <ol>
  * <li>A handshaking sets place to ensure trust with the client.</li>
  * <li>The server reads the number of files to be received.</li>
+ * <li>An answer is given to the client based on the validity of the request.</li>
  * <li>Files are then received ; each file is read this way :
  * 		<ol>
  * 		<li>The name of the file is received.</li>
  * 		<li>The size of the file is received.</li>
- * 		<li>An answer is given to the client based on the validity of the file</li>
+ * 		<li>An answer is given to the client based on the validity of the file.</li>
  * 		<li>The content of the file is received.</li>
  * 		</ol></li>
  * <li>The received files are compiled.</li>
@@ -55,7 +57,7 @@ import robDex.Exceptions.IllegalFileException;
 
 public class Request extends Thread{
 	
-	private static final int BUF_SIZE = 4096, ERROR_TAG = -1, SUCCESS_TAG = 0;
+	private static final int BUF_SIZE = 4096, ERROR_TAG = -1, SUCCESS_TAG = 0, MAX_FILES = 100;
 	private static final String OUTPUT_FILE = "out.dex", ERROR_FILE = "error.log";
 	private static final String ERROR_MSG = "An error unrelated to the java compilation occured.";
 	private String directory;
@@ -65,40 +67,42 @@ public class Request extends Thread{
 	public Request(Socket client){
 		
 		this.client = client;
-		this.directory = Util.directory + '/' + Util.getclientIdentifier(client);		
+		this.directory = Util.directory + File.separator + Util.getclientIdentifier(client);		
 	}
 	
 	public void run(){
 		
-		DataInputStream dis = null;
-		DataOutputStream dos = null;
+		DataBufferedReader in = null;
+		PrintWriter out = null;
 		
 		try {
 			
-			dis = new DataInputStream(new BufferedInputStream(client.getInputStream()));
-	        dos = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
+			in = new DataBufferedReader(client.getInputStream());
+			out = new PrintWriter(client.getOutputStream());
 			
 			if(handshaking()){
 				
-				receiveFiles(dis, dos);
-				
+				receiveFiles(in, out);
+								
 				try {
 					Util.compile(directory, files);
-					sendDexFile(dos);
+					sendDexFile(out);
 				} catch (FailedCompilationException e) {
-					sendErrorFile(dos);
+					sendErrorFile(out);
 				}	
 			}
-		} catch (IllegalFileException e) {
-			//client's mistake
-		} catch (IOException e) {}
+		} catch (IOException e) {
+			//TODO printstacktrace on verbose
+		} catch (BadRequestException e) {
+			//TODO printstacktrace on verbose
+		}
 		
 		finally{
 			
 			try {
 				
-				dis.close();
-				dos.close();
+				in.close();
+				out.close();
 				client.close();
 				Util.deleteDir(new File(directory));
 			} 
@@ -107,7 +111,9 @@ public class Request extends Thread{
 				e.printStackTrace();
 			}
 			
-			catch(NullPointerException e){}
+			catch(Exception e){
+				//TODO add verbose
+			}
 		}
 	}
 	
@@ -116,99 +122,111 @@ public class Request extends Thread{
 		return true;
 	}
 	
-	private void receiveFiles(DataInputStream dis, DataOutputStream dos) throws IOException, IllegalFileException{
-	
-		//number of files
-		int filesCount = dis.readInt();
-		 
-		files = new ArrayList<File>(filesCount);
-        
-        int n = 0;
-        byte[] buf = new byte[BUF_SIZE];
-        
-        //creates repertories to store client files
-        new File(directory).mkdirs();
+	private void receiveFiles(DataBufferedReader in, PrintWriter out) throws IOException, BadRequestException{
+				
+    	int filesCount;
+    	
+    	filesCount = in.readInt();
+    	
+    	//TODO check value
 
-        for(int i = 0; i < filesCount; i++){
-            
-            String fileName = Util.filterFileName(dis.readUTF());
-            long fileSize = dis.readLong();
-            
-            if(Util.isValid(fileName, fileSize)){
-            	dos.writeInt(SUCCESS_TAG);
-            	dos.flush();
+    	try{
+    		
+	    	if(filesCount > MAX_FILES)
+	    		throw new BadRequestException();
+			 
+	    	out.println(SUCCESS_TAG);
+	    	out.flush();
+	    	
+			files = new ArrayList<File>(filesCount);
+	        
+	        int n = 0;
+	        char[] buf = new char[BUF_SIZE];
+	        
+	        //creates repertories to store client files
+	        new File(directory).mkdirs();
+	
+	        for(int i = 0; i < filesCount; i++){
+	                    	
+	            String fileName = Util.filterFileName(in.readLine());
+	                        
+	            long fileSize = in.readLong();
+	            	            	
+            	if(!Util.isValid(fileName, fileSize))
+            		throw new BadRequestException();
             	
-            	File file = new File(directory + '/' + fileName);
+            	out.println(SUCCESS_TAG);
+            	out.flush();
+
+            	File file = new File(directory + File.separator + fileName);
                 
                 files.add(file);
                 
-                FileOutputStream fos = new FileOutputStream(file);
-                
-                while (fileSize > 0 && (n = dis.read(buf, 0, (int)Math.min(buf.length, fileSize))) != -1){
-                	
-                	fos.write(buf, 0, n);
+                PrintWriter pw = new PrintWriter(file);
+                                                
+                while (fileSize > 0 && (n = in.read(buf)) != -1){
+                	pw.print(buf);
                 	fileSize -= n;
                 }
                 
-                fos.close();
-            }            
-            
-            else{
-            	
-            	dos.writeInt(ERROR_TAG);
-            	throw new IllegalFileException();
-            }
-        }
+                pw.close();    
+	                      
+	        }
+	        
+    	} catch (BadRequestException e){
+    		
+    		out.println(ERROR_TAG);
+        	out.flush();
+        	throw e;
+    	}
 	}
 	
-	private void sendDexFile(DataOutputStream dos) throws IOException{
+	public void sendDexFile(PrintWriter out) throws IOException{
 		
-		dos.writeInt(SUCCESS_TAG);
-		sendFile(dos, new File(directory + '/' + OUTPUT_FILE));
+		out.println(SUCCESS_TAG);
+		sendFile(out, new File(directory + File.separator + OUTPUT_FILE));
 	}
 	
 	/**
 	 * Sends the error file to the client. If the error log file is empty, a default message will be sent.
 	 * 
-	 * @param dos the socket's output stream
+	 * @param out the socket's output stream
 	 * @throws IOException if an IO issue appears
 	 */
-	private void sendErrorFile(DataOutputStream dos) throws IOException{
+	private void sendErrorFile(PrintWriter out) throws IOException{
 		
-		dos.writeInt(ERROR_TAG);
+		out.println(ERROR_TAG);
 		
-		File f = new File(directory + '/' + ERROR_FILE);
+		File f = new File(directory + File.separator + ERROR_FILE);
 		
 		if(f.exists() && f.length() > 0)
-			sendFile(dos, f);
+			sendFile(out, f);
 		
 		else{
 			
-			dos.writeLong(ERROR_MSG.length());
-			dos.flush();
-			dos.write(ERROR_MSG.getBytes());
-			dos.flush();
+			out.println(ERROR_MSG.length());
+			out.flush();
+			out.println(ERROR_MSG);
+			out.flush();
 		}
 	}
 	
-	private void sendFile(DataOutputStream dos, File f) throws IOException{
+	private void sendFile(PrintWriter out, File f) throws IOException{
 		
 		FileInputStream fis = new FileInputStream(f);
 
         //sends file size
-        dos.writeLong(f.length());
-        dos.flush();
+        out.println(f.length());
+        out.flush();
         
-        int n;
         byte[] buf = new byte[BUF_SIZE];
 
-        while((n = fis.read(buf)) != -1){
+        while(fis.read(buf) != -1){
 
-            dos.write(buf, 0, n);
-            dos.flush();
+            out.print(buf);
+            out.flush();
         }
         
         fis.close();
 	}
-	
 }

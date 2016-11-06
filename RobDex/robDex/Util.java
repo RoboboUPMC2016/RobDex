@@ -18,7 +18,7 @@ public class Util {
 	private static final String DX_OPTION = "-x";
 	private static final long FILE_SIZE_MAX = 1000000; //1MB
 	
-	static String directory = "./tmp";
+	static String directory = "." + File.separator + "tmp";
 	static String dxPath = "dx";
 	static String jarPath;
 
@@ -169,7 +169,9 @@ public class Util {
 	
 	public static String filterFileName(String path){
 		
-		return path.substring(path.lastIndexOf('/') + 1);
+		int n = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+		
+		return path.substring(n + 1);
 	}
 	
 	public static String getclientIdentifier(Socket client){
@@ -242,7 +244,7 @@ public class Util {
 		
 		if(errorFileName != null){
 			
-			File errorFile = new File(directory + '/' + errorFileName);
+			File errorFile = new File(directory + File.separator + errorFileName);
 			pb.redirectError(errorFile);
 		}
 		
