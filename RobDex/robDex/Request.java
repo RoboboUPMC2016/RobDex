@@ -61,7 +61,7 @@ public class Request extends Thread{
 	private static final String OUTPUT_FILE = "out.dex", ERROR_FILE = "error.log";
 	private static final String ERROR_MSG = "An error unrelated to the java compilation occured.";
 	private String directory;
-	private Socket client;
+	protected final Socket client;
 	private ArrayList<File> files;
 	
 	public Request(Socket client){
@@ -70,6 +70,7 @@ public class Request extends Thread{
 		this.directory = Util.directory + File.separator + Util.getclientIdentifier(client);		
 	}
 	
+	@Override
 	public void run(){
 		
 		DataBufferedReader in = null;
@@ -85,6 +86,7 @@ public class Request extends Thread{
 				receiveFiles(in, out);
 								
 				try {
+					
 					Util.compile(directory, files);
 					sendDexFile(out);
 				} catch (FailedCompilationException e) {
@@ -117,6 +119,10 @@ public class Request extends Thread{
 		}
 	}
 	
+	public void closeConnection() throws IOException{
+		client.close();
+	}
+	
 	private boolean handshaking(){
 		
 		return true;
@@ -128,8 +134,6 @@ public class Request extends Thread{
     	
     	filesCount = in.readInt();
     	
-    	//TODO check value
-
     	try{
     		
 	    	if(filesCount > MAX_FILES)
@@ -163,9 +167,14 @@ public class Request extends Thread{
                 files.add(file);
                 
                 PrintWriter pw = new PrintWriter(file);
+                
+                String s;
                                                 
                 while (fileSize > 0 && (n = in.read(buf)) != -1){
-                	pw.print(buf);
+                	
+                	s = new String(buf, 0, n);
+                	pw.print(s);
+                	
                 	fileSize -= n;
                 }
                 
@@ -220,10 +229,14 @@ public class Request extends Thread{
         out.flush();
         
         byte[] buf = new byte[BUF_SIZE];
+        String s;
+        int n;
 
-        while(fis.read(buf) != -1){
+        while((n = fis.read(buf)) != -1){
 
-            out.print(buf);
+        	s = new String(buf, 0, n);
+        	
+            out.print(s);
             out.flush();
         }
         

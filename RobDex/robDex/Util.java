@@ -26,6 +26,8 @@ public class Util {
 	static String dexFileName = "out.dex";
 	static int port = 5668;
 	
+	private Util(){}
+	
 	public static void init(String[] args){
 		
 		List<String> a = Arrays.asList(args);
@@ -85,7 +87,7 @@ public class Util {
 		Process proc;
 		try {
 			
-			proc = rt.exec("which dx");
+			proc = rt.exec("dx");
 			proc.waitFor();
 			int exitVal = proc.exitValue();
 			
@@ -287,13 +289,14 @@ public class Util {
 		command.add(dxPath);
 		command.add("--dex");
 		command.add("--output=" + dexFileName);
+	
 		command.addAll(fileNames);
 				
 		startCompilerProcess(command, directory);
 	}
 	
 	public static void compile(String directory, List<File> files) throws FailedCompilationException, IOException{
-		
+
 		List<String> javaFileNames = getNames(files);
 		
 		compileIntoClass(directory, javaFileNames);
