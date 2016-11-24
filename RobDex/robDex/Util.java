@@ -260,7 +260,7 @@ public class Util {
 			Process p = pb.start();
 			
 			int exitStatus = p.waitFor();
-						
+									
 			if(exitStatus != 0)
 				throw new FailedCompilationException(exitStatus);
 						
@@ -282,6 +282,10 @@ public class Util {
 		
 		command.add("-cp");
 		command.add(jarPath);
+		command.add("-source");
+		command.add("1.7");
+		command.add("-target");
+		command.add("1.7");
 		
 		command.addAll(fileNames);
 		
