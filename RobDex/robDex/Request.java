@@ -74,12 +74,12 @@ public class Request extends Thread{
 	public void run(){
 		
 		DataBufferedReader in = null;
-		PrintWriter out = null;
+		DataPrintWriter out = null;
 		
 		try {
 			
 			in = new DataBufferedReader(client.getInputStream());
-			out = new PrintWriter(client.getOutputStream());
+			out = new DataPrintWriter(client.getOutputStream());
 			
 			if(handshaking()){
 				
@@ -190,7 +190,7 @@ public class Request extends Thread{
     	}
 	}
 	
-	public void sendDexFile(PrintWriter out) throws IOException{
+	public void sendDexFile(DataPrintWriter out) throws IOException{
 		
 		out.println(SUCCESS_TAG);
 		sendFile(out, new File(directory + File.separator + OUTPUT_FILE));
@@ -202,7 +202,7 @@ public class Request extends Thread{
 	 * @param out the socket's output stream
 	 * @throws IOException if an IO issue appears
 	 */
-	private void sendErrorFile(PrintWriter out) throws IOException{
+	private void sendErrorFile(DataPrintWriter out) throws IOException{
 		
 		out.println(ERROR_TAG);
 		
@@ -220,7 +220,7 @@ public class Request extends Thread{
 		}
 	}
 	
-	private void sendFile(PrintWriter out, File f) throws IOException{
+	private void sendFile(DataPrintWriter out, File f) throws IOException{
 		
 		FileInputStream fis = new FileInputStream(f);
 
@@ -234,9 +234,10 @@ public class Request extends Thread{
 
         while((n = fis.read(buf)) != -1){
 
-        	s = new String(buf, 0, n);
+        	s = new String(buf, 0, n, "UTF-8");
         	
-            out.print(s);
+            //out.print(s);
+            out.write(buf, 0, n);
             out.flush();
         }
         

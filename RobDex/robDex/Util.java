@@ -40,7 +40,7 @@ public class Util {
 		else{
 			
 			dxPath = update(a, DX_OPTION, dxPath);
-			checkExistence(dxPath, "dx");
+			checkExistence(dxPath, isWindows() ? "dx.bat" : "dx");
 		}
 		
 		if(!a.contains(JAR_OPTION))
@@ -55,6 +55,10 @@ public class Util {
 
 		new File(directory).mkdirs();
 		checkExistence(directory, "");
+	}
+	
+	private static boolean isWindows(){
+		return System.getProperty("os.name").toLowerCase().contains("windows");
 	}
 	
 	private static String lookForJar(){
@@ -87,7 +91,9 @@ public class Util {
 		Process proc;
 		try {
 			
-			proc = rt.exec("dx");
+			String command = isWindows() ? "where" : "which";
+			
+			proc = rt.exec(command + " dx");
 			proc.waitFor();
 			int exitVal = proc.exitValue();
 			

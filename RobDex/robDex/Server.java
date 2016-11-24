@@ -43,7 +43,7 @@ public class Server {
     			client = serverSocket.accept();
     			
     			//TODO check source
-    			pool.submit(new Request(client));
+    			pool.submit(new TimedRequest(client));
     		}
         } 
 		
