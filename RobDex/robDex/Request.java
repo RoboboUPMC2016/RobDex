@@ -9,6 +9,9 @@ import java.util.ArrayList;
 
 import robDex.Exceptions.BadRequestException;
 import robDex.Exceptions.FailedCompilationException;
+import robDex.util.Compiler;
+import robDex.util.Util;
+import robDex.util.option.OptionManager;
 
 /**
  * <p>
@@ -67,7 +70,7 @@ public class Request extends Thread{
 	public Request(Socket client){
 		
 		this.client = client;
-		this.directory = Util.directory + File.separator + Util.getclientIdentifier(client);		
+		this.directory = OptionManager.getDir() + File.separator + Util.getclientIdentifier(client);		
 	}
 	
 	@Override
@@ -87,7 +90,7 @@ public class Request extends Thread{
 								
 				try {
 					
-					Util.compile(directory, files);
+					Compiler.compile(directory, files);
 					sendDexFile(out);
 				} catch (FailedCompilationException e) {
 					sendErrorFile(out);
@@ -229,14 +232,10 @@ public class Request extends Thread{
         out.flush();
         
         byte[] buf = new byte[BUF_SIZE];
-        String s;
         int n;
 
         while((n = fis.read(buf)) != -1){
-
-        	s = new String(buf, 0, n, "UTF-8");
         	
-            //out.print(s);
             out.write(buf, 0, n);
             out.flush();
         }

@@ -6,10 +6,10 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import robDex.util.option.OptionManager;
+
 /*
- * TODO:
- * - add verbose mode
- * - add bash path to possible arguments
+ * TODO add verbose mode
  */
 
 public class Server {
@@ -22,7 +22,7 @@ public class Server {
 		ExecutorService pool = Executors.newFixedThreadPool(poolSize); 
 		
 		try{
-			Util.init(args);
+			OptionManager.init(args);
 			
 		}
 
@@ -32,11 +32,13 @@ public class Server {
 			System.exit(-1);
 		}
 		
+		int port = OptionManager.getPort();
+		
 		try {
-            serverSocket = new ServerSocket(Util.port);
+            serverSocket = new ServerSocket(port);
             Socket client = null;
     		
-            System.out.println("Server launched on port " + Util.port + ". Waiting for connections.\n");
+            System.out.println("Server launched on port " + port + ". Waiting for connections.\n");
             
     		while(true){
 
@@ -48,7 +50,7 @@ public class Server {
         } 
 		
 		catch (IOException ex) {
-            System.out.println("Can't set server on port " + Util.port + ".");
+            System.out.println("Can't set server on port " + port + ".");
         }
 		
 		finally{
