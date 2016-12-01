@@ -26,7 +26,7 @@ public class Server {
 			
 		}
 
-		catch(RuntimeException e){
+		catch(Exception e){
 			
 			System.err.println(e.getMessage());
 			System.exit(-1);

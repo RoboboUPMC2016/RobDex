@@ -7,8 +7,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
-import robDex.Exceptions.BadRequestException;
-import robDex.Exceptions.FailedCompilationException;
+import robDex.exceptions.BadRequestException;
+import robDex.exceptions.FailedCompilationException;
 import robDex.util.Compiler;
 import robDex.util.Util;
 import robDex.util.option.OptionManager;
@@ -93,6 +93,7 @@ public class Request extends Thread{
 					Compiler.compile(directory, files);
 					sendDexFile(out);
 				} catch (FailedCompilationException e) {
+					//e.printStackTrace();
 					sendErrorFile(out);
 				}	
 			}

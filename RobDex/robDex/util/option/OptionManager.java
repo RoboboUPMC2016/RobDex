@@ -4,17 +4,22 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import robDex.exceptions.FailedCompilationException;
+import robDex.util.Compiler;
 
 public class OptionManager {
 	
 	private static List<Option<? extends Object>> options;
-	private static StringOption dir, dx, jar;
+	private static StringOption dir, dx, jar, rlambda;
 	private static IntOption port;
+	private static String classPath;
 	
 	private OptionManager(){}
 	
-	public static void init(String[] args){
+	public static void init(String[] args) throws FailedCompilationException{
 		
 		options = new ArrayList<>();
 		addOptions();
@@ -25,8 +30,20 @@ public class OptionManager {
 		checkDx();
 		checkJar();
 		
-		new File(getDir()).mkdirs();
-		checkExistence(getDir(), "");
+		checkExistence(getRetroLambda(), ".jar");
+		
+		String d = getDir();
+		
+		new File(d).mkdirs();
+		checkExistence(d);
+		dir.setValue(getAbsolute(d));
+		
+		classPath = d + File.separator + "contentJar";
+		new File(classPath).mkdir();
+		checkExistence(classPath);
+		classPath = getAbsolute(classPath);
+		
+		Compiler.extractJar();
 	}
 	
 	public static String getDir(){
@@ -45,17 +62,23 @@ public class OptionManager {
 		return port.getValue();
 	}
 	
+	public static String getRetroLambda(){
+		return rlambda.getValue();
+	}
+	
+	public static String getClassPath(){
+		return classPath;
+	}
+	
 	public static void addOptions(){
-		
+				
 		port = new IntOption(5668, "-p", "--port");
-		dir = new StringOption("." + File.separator +"tmp", "-d", "--directory");
+		dir = new StringOption("." + File.separator + "tmp", "-d", "--directory");
 		dx = new StringOption("dx","-x", "--executable");
 		jar = new StringOption("", "-j", "--jar");
+		rlambda = new StringOption(".", "-r", "--retroLambda");
 		
-		options.add(port);
-		options.add(dir);
-		options.add(dx);
-		options.add(jar);
+		options.addAll(Arrays.asList(port, dir, dx, jar, rlambda));
 	}
 	
 	private static void checkExistence(String fileName, String extension){
@@ -67,6 +90,10 @@ public class OptionManager {
 		
 		if(!f.exists())
 			throw new IllegalArgumentException("File \"" + fileName + "\" does not exist");
+	}
+	
+	private static void checkExistence(String fileName){
+		checkExistence(fileName, "");
 	}
 	
 	public static void checkDx() throws IllegalArgumentException{
@@ -106,12 +133,15 @@ public class OptionManager {
 	private static void checkJar(){
 		
 		if(getJar().equals(""))
-			jar.setValue(lookForJar());
+			jar.setValue(lookForJar("retrolambda", false));
+		
+		if(getRetroLambda().equals(""))
+			rlambda.setValue(lookForJar("retrolambda", true));
 		
 		checkExistence(getJar(), ".jar");
 	}
 	
-	private static String lookForJar(){
+	private static String lookForJar(String nameContent, boolean mustContain){
 		
 		File f = new File(".");
 		
@@ -119,7 +149,8 @@ public class OptionManager {
 
 			@Override
 			public boolean accept(File dir, String name) {
-				return name.length() > 4 && name.endsWith(".jar");
+				boolean b = name.contains(nameContent) && mustContain || !name.contains(nameContent) && !mustContain;
+				return name.length() > 4 && name.endsWith(".jar") && b;
 			}
 			
 		};
@@ -133,5 +164,10 @@ public class OptionManager {
 			throw new IllegalArgumentException("Multiple jar files found in current directory.");
 		
 		return r[0];
+	}
+	
+	private static String getAbsolute(String path){
+		
+		return new File(path).getAbsolutePath();
 	}
 }

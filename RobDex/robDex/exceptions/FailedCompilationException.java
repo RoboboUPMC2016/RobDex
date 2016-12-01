@@ -1,4 +1,4 @@
-package robDex.Exceptions;
+package robDex.exceptions;
 
 public class FailedCompilationException extends Exception{
 
