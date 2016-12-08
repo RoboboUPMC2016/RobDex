@@ -3,11 +3,11 @@ package robDex.util.option;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import robDex.exceptions.FailedCompilationException;
 import robDex.util.Compiler;
 
 public class OptionManager {
@@ -15,11 +15,12 @@ public class OptionManager {
 	private static List<Option<? extends Object>> options;
 	private static StringOption dir, dx, jar, rlambda;
 	private static IntOption port;
+	private static AddressOption host;
 	private static String classPath;
 	
 	private OptionManager(){}
 	
-	public static void init(String[] args) throws FailedCompilationException{
+	public static void init(String[] args) throws Exception{
 		
 		options = new ArrayList<>();
 		addOptions();
@@ -66,19 +67,24 @@ public class OptionManager {
 		return rlambda.getValue();
 	}
 	
+	public static InetAddress getHost(){
+		return host.getValue();
+	}
+	
 	public static String getClassPath(){
 		return classPath;
 	}
 	
-	public static void addOptions(){
+	public static void addOptions() throws Exception{
 				
 		port = new IntOption(5668, "-p", "--port");
 		dir = new StringOption("." + File.separator + "tmp", "-d", "--directory");
 		dx = new StringOption("dx","-x", "--executable");
 		jar = new StringOption("", "-j", "--jar");
 		rlambda = new StringOption(".", "-r", "--retroLambda");
+		host = new AddressOption(InetAddress.getByName("127.0.0.1"), "-h", "--host");
 		
-		options.addAll(Arrays.asList(port, dir, dx, jar, rlambda));
+		options.addAll(Arrays.asList(port, dir, dx, jar, rlambda, host));
 	}
 	
 	private static void checkExistence(String fileName, String extension){

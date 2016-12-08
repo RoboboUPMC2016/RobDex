@@ -50,5 +50,5 @@ abstract class Option<T> {
 		return null;
 	}
 	
-	public abstract void scan(String[] args);
+	public abstract void scan(String[] args) throws Exception;
 }
