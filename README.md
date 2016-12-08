@@ -5,7 +5,7 @@ Server for .java -> .dex compilation
 Usage: java robDex.Server [options]
 
 
-Le latest (currently 2.3.0) retrolambda jar file can be found here:
+The latest (currently 2.3.0) retrolambda jar file can be found here:
 
 https://oss.sonatype.org/content/groups/public/net/orfjackal/retrolambda/retrolambda/
 
@@ -42,3 +42,7 @@ Options:
    Full path (including its name) to the retrolambda jar file.
    Default: the program will look for a jar file which name begins with “retrolambda” in the current directory.
 
+-h, --host address
+
+   Address of the host from which this server should accept connections.
+   Default: 127.0.0.1
