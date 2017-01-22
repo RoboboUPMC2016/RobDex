@@ -56,21 +56,26 @@ public class Compiler {
 		startCommandProcess(dir, null, files, command, options);
 	}
 	
-	private static void compileIntoClass(String dir, List<String> fileNames) throws FailedCompilationException{
+	private static void compileIntoClass(String idir, String odir, List<String> fileNames) throws FailedCompilationException{
 		
-		startCommandProcess(dir, dir + File.separator + errorFileName, fileNames, "javac", "-cp", OptionManager.getJar());
+		String errorPath = idir + File.separator + errorFileName;
+		
+		startCommandProcess(idir, errorPath, fileNames, "javac", "-d", odir, "-cp", OptionManager.getJar());
 	}
 	
-	private static void convertLambda(String dir, List<String> fileNames) throws FailedCompilationException{
-				
-		String classPath = "-Dretrolambda.classpath=" + dir + File.pathSeparatorChar + OptionManager.getClassPath();
+	private static void convertLambda(String idir, String odir, List<String> fileNames) throws FailedCompilationException{
+		
+		String classPath = "-Dretrolambda.classpath=" + idir + File.pathSeparatorChar + OptionManager.getClassPath();
 		
 		String rl = OptionManager.getRetroLambda();
 		
 		String retroDir = new File(rl).getAbsoluteFile().getParent();
 		rl = new File(rl).getName();
 		
-		startCommandProcess(retroDir, dir + File.separator + errorFileName, null, "java", "-Dretrolambda.inputDir=" + dir, classPath, "-jar", rl);
+		String inOption = "-Dretrolambda.inputDir=" + idir;
+		String outOption = "-Dretrolambda.outputDir=" + odir;
+		
+		startCommandProcess(retroDir, idir + File.separator + errorFileName, null, "java", inOption, outOption, classPath, "-jar", rl);
 	}
 	
 	public static void extractJar() throws FailedCompilationException{
@@ -78,21 +83,27 @@ public class Compiler {
 		startCommandProcess(OptionManager.getClassPath(), null, "jar", "xf", OptionManager.getJar());
 	}
 	
-	private static void compileIntoDex(String dir, List<String> fileNames) throws FailedCompilationException, IOException{
+	private static void compileIntoDex(String idir, String odir, List<String> fileNames) throws FailedCompilationException, IOException{
 		
-		startCommandProcess(dir, fileNames, OptionManager.getDx(), "--dex", "--output=" + dexFileName);
+		startCommandProcess(idir, fileNames, OptionManager.getDx(), "--dex", "--output=" + odir + File.separator + dexFileName);
 	}
 	
 	public static void compile(String dir, List<File> files) throws FailedCompilationException, IOException{
 
-		List<String> javaFileNames = Util.getNames(files);
+		String javacdir = dir + File.separator + "javacdir";
+		File javacDir = new File(javacdir);
+		javacDir.mkdirs();
 		
-		compileIntoClass(dir, javaFileNames);
+		String java7Dir = dir + File.separator + "java7dir";
+		new File(java7Dir).mkdirs();
 		
-		List<String> classFileNames = Util.getClassFileNames(javaFileNames);
+		compileIntoClass(dir, javacdir, Util.getNames(files));
 		
-		convertLambda(dir, classFileNames);
+		List<String> classFileNames = Util.getNames(Arrays.asList(javacDir.listFiles()));
+		classFileNames.removeIf(n -> !n.endsWith(".class"));
 		
-		compileIntoDex(dir, classFileNames);
+		convertLambda(javacdir, java7Dir, classFileNames);
+		
+		compileIntoDex(java7Dir, dir, classFileNames);
 	}
 }

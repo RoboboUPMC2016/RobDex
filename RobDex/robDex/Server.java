@@ -9,12 +9,20 @@ import java.util.concurrent.Executors;
 
 import robDex.util.option.OptionManager;
 
-/*
- * TODO add verbose mode
+/**
+ * This class is used to launch the server.
+ * First the arguments are dealt with, and then the server starts.
+ * 
+ * 
+ * @author Nicolas Fedy
+ *
  */
 
 public class Server {
 	
+	/**
+	 * Number of simultaneous threads.
+	 */
 	public static int poolSize = 50;
 
 	public static void main(String[] args){

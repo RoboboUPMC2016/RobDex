@@ -67,6 +67,11 @@ public class Request extends Thread{
 	protected final Socket client;
 	private ArrayList<File> files;
 	
+	/**
+	 * Creates a request for the socket in parameter.
+	 * 
+	 * @param client The client's socket.
+	 */
 	public Request(Socket client){
 		
 		this.client = client;
@@ -90,6 +95,7 @@ public class Request extends Thread{
 								
 				try {
 					
+					//Compiler.compile(directory, files);
 					Compiler.compile(directory, files);
 					sendDexFile(out);
 				} catch (FailedCompilationException e) {
@@ -123,15 +129,34 @@ public class Request extends Thread{
 		}
 	}
 	
+	/**
+	 * Close the connection with the client.
+	 * 
+	 * @throws IOException if an I/O error occurs when closing the client's socket.
+	 */
 	public void closeConnection() throws IOException{
 		client.close();
 	}
 	
+	/**
+	 * Used to make sure of the client's autenthity.
+	 * Currently, it doesn't check anything.
+	 * 
+	 * @return
+	 */
 	private boolean handshaking(){
 		
 		return true;
 	}
 	
+	/**
+	 * Receives files from client.
+	 * 
+	 * @param in socket's input stream
+	 * @param out socket's output stream
+	 * @throws IOException if an IO issue appears.
+	 * @throws BadRequestException if the client's request is invalid.
+	 */
 	private void receiveFiles(DataBufferedReader in, PrintWriter out) throws IOException, BadRequestException{
 				
     	int filesCount;
@@ -194,6 +219,13 @@ public class Request extends Thread{
     	}
 	}
 	
+	/**
+	 * Sends the Dex file to the client. It only happens if it was successfully made.
+	 * 
+	 * @param out the socket's output stream
+	 * @throws IOException if an IO issue appears
+	 */
+	
 	public void sendDexFile(DataPrintWriter out) throws IOException{
 		
 		out.println(SUCCESS_TAG);
@@ -223,6 +255,14 @@ public class Request extends Thread{
 			out.flush();
 		}
 	}
+	
+	/**
+	 * Send the content of a file to the client
+	 * 
+	 * @param out the socket's output stream
+	 * @param f the file to be sent
+	 * @throws IOException if an IO issue appears
+	 */
 	
 	private void sendFile(DataPrintWriter out, File f) throws IOException{
 		
