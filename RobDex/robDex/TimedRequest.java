@@ -3,6 +3,15 @@ package robDex;
 import java.io.IOException;
 import java.net.Socket;
 
+/**
+ * This class is used to ensure requests finish in a timely manner.
+ * If a request take longer than a specified delay, the connection with the client will be cut.
+ * 
+ * 
+ * @author Nicolas Fedy
+ *
+ */
+
 public class TimedRequest extends Thread{
 	
 	private static final long defaultDelay = 5*60*1000;

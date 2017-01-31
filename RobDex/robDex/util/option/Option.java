@@ -4,12 +4,39 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * This class is used to manage the program's options for better use and readability.
+ * 
+ * 
+ * @author Nicolas Fedy
+ *
+ * @param <T> type of the option
+ */
+
 abstract class Option<T> {
 
+	/**
+	 * names the user can use to refer to this option.
+	 */
 	private List<String> aliases;
+	
+	/**
+	 * Option's value.
+	 */
 	private T value;
+	
+	/**
+	 * {@code true} if the value has been modified by the user, {@code false} otherwise.
+	 */
 	private boolean modified;
 	
+	/**
+	 * Creates an option.
+	 * 
+	 * @param defaultValue default value of this option.
+	 * @param alias alias for this option.
+	 * @param aliases additional aliases for this option.
+	 */
 	protected Option(T defaultValue, String alias, String... aliases){
 		
 		this.aliases = new ArrayList<>(aliases.length + 1);
@@ -50,5 +77,11 @@ abstract class Option<T> {
 		return null;
 	}
 	
+	/**
+	 * Scan {@code args} to look for any matching alias to this option, and sets its value accordingly.
+	 * 
+	 * @param args array to be scanned
+	 * @throws Exception if the scanned option's value is invalid.
+	 */
 	public abstract void scan(String[] args) throws Exception;
 }

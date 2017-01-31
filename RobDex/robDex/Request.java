@@ -142,7 +142,7 @@ public class Request extends Thread{
 	 * Used to make sure of the client's autenthity.
 	 * Currently, it doesn't check anything.
 	 * 
-	 * @return
+	 * @return {@code true}.
 	 */
 	private boolean handshaking(){
 		

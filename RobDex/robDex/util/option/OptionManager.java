@@ -10,6 +10,13 @@ import java.util.List;
 
 import robDex.util.Compiler;
 
+/**
+ * This class is used to manage the program's options.
+ * 
+ * @author Nicolas Fedy
+ *
+ */
+
 public class OptionManager {
 	
 	private static List<Option<? extends Object>> options;
